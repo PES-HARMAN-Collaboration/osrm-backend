@@ -31,10 +31,11 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "engine/approach.hpp"
 #include "engine/bearing.hpp"
 #include "engine/hint.hpp"
+#include "engine/yaw_rate.hpp"
+#include "engine/steering_angle.hpp"
 #include "util/coordinate.hpp"
 
 #include <optional>
-
 #include <algorithm>
 #include <vector>
 
@@ -54,13 +55,14 @@ namespace osrm::engine::api
  *              towards true north in clockwise direction, optional per coordinate
  *  - approaches: force the phantom node to start towards the node with the road country side or
  *                its opposite
+ *  - yaw_rate: constrains routing/matching based on vehicle yaw rate capabilities
+ *  - steering_angle: constrains routing/matching based on vehicle steering angle capabilities
  *
- * \see OSRM, Coordinate, Hint, Bearing, RouteParameters, TableParameters,
+ * \see OSRM, Coordinate, Hint, Bearing, YawRate, SteeringAngle, RouteParameters, TableParameters,
  *      NearestParameters, TripParameters, MatchParameters and TileParameters
  */
 struct BaseParameters
 {
-
     enum class SnappingType
     {
         Default,
@@ -78,6 +80,8 @@ struct BaseParameters
     std::vector<std::optional<double>> radiuses;
     std::vector<std::optional<Bearing>> bearings;
     std::vector<std::optional<Approach>> approaches;
+    std::vector<std::optional<YawRate>> yaw_rate;           // Add as member variable
+    std::vector<std::optional<SteeringAngle>> steering_angle; // Add as member variable
     std::vector<std::string> exclude;
     std::optional<OutputFormatType> format = OutputFormatType::JSON;
 
@@ -94,34 +98,71 @@ struct BaseParameters
                    std::vector<std::optional<double>> radiuses_ = {},
                    std::vector<std::optional<Bearing>> bearings_ = {},
                    std::vector<std::optional<Approach>> approaches_ = {},
+                   std::vector<std::optional<YawRate>> yaw_rates_ = {},
+                   std::vector<std::optional<SteeringAngle>> steering_angles_ = {},
                    bool generate_hints_ = true,
-                   std::vector<std::string> exclude = {},
+                   std::vector<std::string> exclude_ = {},
                    const SnappingType snapping_ = SnappingType::Default)
-        : coordinates(std::move(coordinates_)), hints(std::move(hints_)),
-          radiuses(std::move(radiuses_)), bearings(std::move(bearings_)),
-          approaches(std::move(approaches_)), exclude(std::move(exclude)),
-          generate_hints(generate_hints_), snapping(snapping_)
+        : coordinates(std::move(coordinates_)), 
+          hints(std::move(hints_)),
+          radiuses(std::move(radiuses_)), 
+          bearings(std::move(bearings_)),
+          approaches(std::move(approaches_)), 
+          yaw_rate(std::move(yaw_rates_)),
+          steering_angle(std::move(steering_angles_)), 
+          exclude(std::move(exclude_)),
+          generate_hints(generate_hints_), 
+          snapping(snapping_)
     {
     }
 
     bool IsValid() const
     {
-        return (hints.empty() || hints.size() == coordinates.size()) &&
-               (bearings.empty() || bearings.size() == coordinates.size()) &&
-               (radiuses.empty() || radiuses.size() == coordinates.size()) &&
-               (approaches.empty() || approaches.size() == coordinates.size()) &&
-               std::all_of(bearings.begin(),
-                           bearings.end(),
-                           [](const std::optional<Bearing> &bearing_and_range)
-                           {
-                               if (bearing_and_range)
-                               {
-                                   return bearing_and_range->IsValid();
-                               }
-                               return true;
-                           });
+        bool basic_validation = 
+            (hints.empty() || hints.size() == coordinates.size()) &&
+            (bearings.empty() || bearings.size() == coordinates.size()) &&
+            (radiuses.empty() || radiuses.size() == coordinates.size()) &&
+            (approaches.empty() || approaches.size() == coordinates.size()) &&
+            (yaw_rate.empty() || yaw_rate.size() == coordinates.size()) &&
+            (steering_angle.empty() || steering_angle.size() == coordinates.size());
+
+        bool bearings_valid = std::all_of(bearings.begin(),
+                                         bearings.end(),
+                                         [](const std::optional<Bearing> &bearing_and_range)
+                                         {
+                                             if (bearing_and_range)
+                                             {
+                                                 return bearing_and_range->IsValid();
+                                             }
+                                             return true;
+                                         });
+
+        bool yaw_rates_valid = std::all_of(yaw_rate.begin(),
+                                          yaw_rate.end(),
+                                          [](const std::optional<YawRate> &yaw_rate)
+                                          {
+                                              if (yaw_rate)
+                                              {
+                                                  return yaw_rate->IsValid();
+                                              }
+                                              return true;
+                                          });
+
+        bool steering_angles_valid = std::all_of(steering_angle.begin(),
+                                                steering_angle.end(),
+                                                [](const std::optional<SteeringAngle> &steering_angle)
+                                                {
+                                                    if (steering_angle)
+                                                    {
+                                                        return steering_angle->IsValid();
+                                                    }
+                                                    return true;
+                                                });
+
+        return basic_validation && bearings_valid && yaw_rates_valid && steering_angles_valid;
     }
 };
+
 } // namespace osrm::engine::api
 
-#endif // ROUTE_PARAMETERS_HPP
+#endif // ENGINE_API_BASE_PARAMETERS_HPP

@@ -544,6 +544,23 @@ BOOST_AUTO_TEST_CASE(valid_route_urls)
     CHECK_EQUAL_RANGE(reference_21.exclude, result_21->exclude);
 }
 
+BOOST_AUTO_TEST_CASE(test_parse_match_with_yaw_and_steering)
+{
+    auto parameters = parseParameters<MatchParameters>("coordinates=1,2;3,4&yaw_rate=0.12;0.15&steering_angle=5.5;10.0");
+    BOOST_REQUIRE(parameters);
+    BOOST_CHECK_EQUAL(parameters->yaw_rate.size(), 2);
+    BOOST_CHECK(parameters->yaw_rate[0]);
+    BOOST_CHECK_CLOSE(parameters->yaw_rate[0]->value, 0.12, 1e-5);
+    BOOST_CHECK(parameters->yaw_rate[1]);
+    BOOST_CHECK_CLOSE(parameters->yaw_rate[1]->value, 0.15, 1e-5);
+
+    BOOST_CHECK_EQUAL(parameters->steering_angle.size(), 2);
+    BOOST_CHECK(parameters->steering_angle[0]);
+    BOOST_CHECK_CLOSE(parameters->steering_angle[0]->value, 5.5, 1e-5);
+    BOOST_CHECK(parameters->steering_angle[1]);
+    BOOST_CHECK_CLOSE(parameters->steering_angle[1]->value, 10.0, 1e-5);
+}
+
 BOOST_AUTO_TEST_CASE(valid_table_urls)
 {
     std::vector<util::Coordinate> coords_1 = {{util::FloatLongitude{1}, util::FloatLatitude{2}},

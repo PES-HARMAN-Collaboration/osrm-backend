@@ -226,6 +226,13 @@ module.exports = function () {
             if (headers.has('waypoints')) {
               got.waypoints = row.waypoints;
             }
+            if (headers.has('yaw_rate')) {
+             got.yaw_rate = json.yaw_rate.map(v => parseFloat(v)).join(';');
+            }
+
+            if (headers.has('steering_angle')) {
+              got.steering_angle = json.steering_angle.map(v => parseFloat(v)).join(';');
+            }
           } else {
             got.waypoints = resultWaypoints.join(';');
             got.matchings = encodedResult;

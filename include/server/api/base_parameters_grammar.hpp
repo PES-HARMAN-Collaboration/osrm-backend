@@ -6,6 +6,8 @@
 #include "engine/bearing.hpp"
 #include "engine/hint.hpp"
 #include "engine/polyline_compressor.hpp"
+#include "engine/yaw_rate.hpp"
+#include "engine/steering_angle.hpp"
 
 #include <boost/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -116,6 +118,16 @@ struct BaseParametersGrammar : boost::spirit::qi::grammar<Iterator, Signature>
             base_parameters.radiuses.push_back(radius ? std::make_optional(*radius) : std::nullopt);
         };
 
+        const auto add_yaw_rate = [](engine::api::BaseParameters &base_parameters,
+                             boost::optional<double> yaw_value) {
+    base_parameters.yaw_rate.push_back(yaw_value ? std::make_optional(engine::YawRate{*yaw_value}) : std::nullopt);
+};
+
+const auto add_steering_angle = [](engine::api::BaseParameters &base_parameters,
+                                   boost::optional<double> angle_value) {
+    base_parameters.steering_angle.push_back(angle_value ? std::make_optional(engine::SteeringAngle{*angle_value}) : std::nullopt);
+};
+
         polyline_chars = qi::char_("a-zA-Z0-9_.--[]{}@?|\\%~`^");
         base64_char = qi::char_("a-zA-Z0-9--_=");
         unlimited_rule = qi::lit("unlimited")[qi::_val = std::numeric_limits<double>::infinity()];
@@ -127,6 +139,14 @@ struct BaseParametersGrammar : boost::spirit::qi::grammar<Iterator, Signature>
                                                 },
                                                 qi::_1,
                                                 qi::_2)];
+
+        yaw_rates_rule =
+            qi::lit("yaw_rate=") >
+            (-(qi::double_ | unlimited_rule))[ph::bind(add_yaw_rate, qi::_r1, qi::_1)] % ';';
+
+        steering_angles_rule =
+            qi::lit("steering_angle=") >
+            (-(qi::double_ | unlimited_rule))[ph::bind(add_steering_angle, qi::_r1, qi::_1)] % ';';
 
         location_rule = (double_ > qi::lit(',') >
                          double_)[qi::_val = ph::bind(
@@ -201,13 +221,15 @@ struct BaseParametersGrammar : boost::spirit::qi::grammar<Iterator, Signature>
                         ',')[ph::bind(&engine::api::BaseParameters::exclude, qi::_r1) = qi::_1];
 
         base_rule = radiuses_rule(qi::_r1)         //
-                    | hints_rule(qi::_r1)          //
-                    | bearings_rule(qi::_r1)       //
-                    | generate_hints_rule(qi::_r1) //
-                    | skip_waypoints_rule(qi::_r1) //
-                    | approach_rule(qi::_r1)       //
-                    | exclude_rule(qi::_r1)        //
-                    | snapping_rule(qi::_r1);
+          | hints_rule(qi::_r1)            //
+          | bearings_rule(qi::_r1)         //
+          | generate_hints_rule(qi::_r1)   //
+          | skip_waypoints_rule(qi::_r1)   //
+          | approach_rule(qi::_r1)         //
+          | exclude_rule(qi::_r1)          //
+          | snapping_rule(qi::_r1)         //
+          | yaw_rates_rule(qi::_r1)        //
+          | steering_angles_rule(qi::_r1); //
     }
 
   protected:
@@ -223,6 +245,8 @@ struct BaseParametersGrammar : boost::spirit::qi::grammar<Iterator, Signature>
     qi::rule<Iterator, Signature> bearings_rule;
     qi::rule<Iterator, Signature> radiuses_rule;
     qi::rule<Iterator, Signature> hints_rule;
+    qi::rule<Iterator, Signature> yaw_rates_rule;
+    qi::rule<Iterator, Signature> steering_angles_rule;
 
     qi::rule<Iterator, Signature> generate_hints_rule;
     qi::rule<Iterator, Signature> skip_waypoints_rule;

@@ -24,7 +24,11 @@ std::string getWrongOptionHelp(const engine::api::MatchParameters &parameters)
         constrainParamSize(
             PARAMETER_SIZE_MISMATCH_MSG, "radiuses", parameters.radiuses, coord_size, help) ||
         constrainParamSize(
-            PARAMETER_SIZE_MISMATCH_MSG, "timestamps", parameters.timestamps, coord_size, help);
+            PARAMETER_SIZE_MISMATCH_MSG, "timestamps", parameters.timestamps, coord_size, help) ||
+        constrainParamSize(
+            PARAMETER_SIZE_MISMATCH_MSG, "yaw_rate", parameters.yaw_rate, coord_size, help) ||
+        constrainParamSize(
+            PARAMETER_SIZE_MISMATCH_MSG, "steering_angle", parameters.steering_angle, coord_size, help);;
 
     if (!param_size_mismatch && parameters.coordinates.size() < 2)
     {

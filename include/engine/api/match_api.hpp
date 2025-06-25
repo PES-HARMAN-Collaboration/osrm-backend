@@ -85,6 +85,34 @@ class MatchAPI final : public RouteAPI
             response.values.emplace("tracepoints", MakeTracepoints(sub_matchings));
         }
         response.values.emplace("matchings", std::move(routes));
+                // Append yaw_rate and steering_angle to the response
+        if (!parameters.yaw_rate.empty())
+        {
+            util::json::Array yaw_array;
+            yaw_array.values.reserve(parameters.yaw_rate.size());
+            for (const auto &yaw : parameters.yaw_rate)
+            {
+                if (yaw)
+                    yaw_array.values.emplace_back(util::json::Number{yaw->rate});
+                else
+                    yaw_array.values.emplace_back(util::json::Null());
+            }
+            response.values.emplace("yaw_rate", std::move(yaw_array));
+        }
+
+        if (!parameters.steering_angle.empty())
+        {
+            util::json::Array steering_array;
+            steering_array.values.reserve(parameters.steering_angle.size());
+            for (const auto &angle : parameters.steering_angle)
+            {
+                if (angle)
+                    steering_array.values.emplace_back(util::json::Number{angle->angle});
+                else
+                    steering_array.values.emplace_back(util::json::Null());
+            }
+            response.values.emplace("steering_angle", std::move(steering_array));
+        }
         response.values.emplace("code", "Ok");
         auto data_timestamp = facade.GetTimestamp();
         if (!data_timestamp.empty())

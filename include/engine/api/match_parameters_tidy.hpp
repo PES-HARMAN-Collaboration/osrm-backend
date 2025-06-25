@@ -82,6 +82,13 @@ inline Result keep_all(const MatchParameters &params)
 
             if (!params.timestamps.empty())
                 result.parameters.timestamps.push_back(params.timestamps[i]);
+
+            // Add handling for new parameters - only if they have per-coordinate values
+            if (!params.yaw_rate.empty())
+                result.parameters.yaw_rate.push_back(params.yaw_rate[i]);
+
+            if (!params.steering_angle.empty())
+                result.parameters.steering_angle.push_back(params.steering_angle[i]);
         }
     }
     if (params.waypoints.empty())
@@ -178,6 +185,13 @@ inline Result tidy(const MatchParameters &params, Thresholds cfg = {15., 5})
 
             if (!params.timestamps.empty())
                 result.parameters.timestamps.push_back(params.timestamps[i]);
+
+            // Add handling for new parameters - only if they have per-coordinate values
+            if (!params.yaw_rate.empty())
+                result.parameters.yaw_rate.push_back(params.yaw_rate[i]);
+
+            if (!params.steering_angle.empty())
+                result.parameters.steering_angle.push_back(params.steering_angle[i]);
         }
         else
         {
@@ -190,6 +204,9 @@ inline Result tidy(const MatchParameters &params, Thresholds cfg = {15., 5})
             }
         }
     }
+
+    if (params.waypoints.empty())
+        result.parameters.waypoints.clear();
 
     return result;
 }
