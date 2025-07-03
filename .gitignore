@@ -41,8 +41,10 @@ Thumbs.db
 
 # build related files #
 #######################
-/_build*
-/build/
+# /build*
+/build/*
+!/build/osrm-test1/
+!/build/osrm-test1/**
 /test/data/monaco.osrm*
 /test/data/ch
 /test/data/mld
