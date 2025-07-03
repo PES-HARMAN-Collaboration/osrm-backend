@@ -3,6 +3,7 @@
 
 #include "server/api/route_parameters_grammar.hpp"
 #include "engine/api/match_parameters.hpp"
+#include "engine/yaw_rate.hpp"
 
 #include <boost/phoenix.hpp>
 #include <boost/spirit/include/qi.hpp>
@@ -47,7 +48,10 @@ struct MatchParametersGrammar final : public RouteParametersGrammar<Iterator, Si
                      (qi::lit("gaps=") >
                       gaps_type[ph::bind(&engine::api::MatchParameters::gaps, qi::_r1) = qi::_1]) |
                      (qi::lit("tidy=") >
-                      qi::bool_[ph::bind(&engine::api::MatchParameters::tidy, qi::_r1) = qi::_1])) %
+                      qi::bool_[ph::bind(&engine::api::MatchParameters::tidy, qi::_r1) = qi::_1]) |
+                     (qi::lit("yaw_rate=") >
+                      (qi::double_ % ';')[ph::bind(&engine::api::MatchParameters::yaw_rate, qi::_r1) =
+                                             ph::bind(&osrm::engine::parseListOfOptionalYawRates, qi::_1)])) %
                         '&');
     }
 

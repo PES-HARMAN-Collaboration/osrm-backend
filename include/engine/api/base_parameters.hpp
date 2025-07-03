@@ -31,6 +31,7 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #include "engine/approach.hpp"
 #include "engine/bearing.hpp"
 #include "engine/hint.hpp"
+#include "engine/yaw_rate.hpp"
 #include "util/coordinate.hpp"
 
 #include <optional>
@@ -78,6 +79,7 @@ struct BaseParameters
     std::vector<std::optional<double>> radiuses;
     std::vector<std::optional<Bearing>> bearings;
     std::vector<std::optional<Approach>> approaches;
+    std::vector<std::optional<YawRate>> yaw_rate;
     std::vector<std::string> exclude;
     std::optional<OutputFormatType> format = OutputFormatType::JSON;
 
@@ -94,13 +96,14 @@ struct BaseParameters
                    std::vector<std::optional<double>> radiuses_ = {},
                    std::vector<std::optional<Bearing>> bearings_ = {},
                    std::vector<std::optional<Approach>> approaches_ = {},
+                   std::vector<std::optional<YawRate>> yaw_rate_ = {},
                    bool generate_hints_ = true,
                    std::vector<std::string> exclude = {},
                    const SnappingType snapping_ = SnappingType::Default)
         : coordinates(std::move(coordinates_)), hints(std::move(hints_)),
           radiuses(std::move(radiuses_)), bearings(std::move(bearings_)),
-          approaches(std::move(approaches_)), exclude(std::move(exclude)),
-          generate_hints(generate_hints_), snapping(snapping_)
+          approaches(std::move(approaches_)), yaw_rate(std::move(yaw_rate_)),
+          exclude(std::move(exclude)), generate_hints(generate_hints_), snapping(snapping_)
     {
     }
 
@@ -110,6 +113,12 @@ struct BaseParameters
                (bearings.empty() || bearings.size() == coordinates.size()) &&
                (radiuses.empty() || radiuses.size() == coordinates.size()) &&
                (approaches.empty() || approaches.size() == coordinates.size()) &&
+               (yaw_rate.empty() || yaw_rate.size() == coordinates.size()) &&
+               std::all_of(yaw_rate.begin(),
+                           yaw_rate.end(),
+                           [](const std::optional<YawRate> &rate)
+                           { return !rate.has_value() || rate->IsValid(); }) &&
+                           
                std::all_of(bearings.begin(),
                            bearings.end(),
                            [](const std::optional<Bearing> &bearing_and_range)

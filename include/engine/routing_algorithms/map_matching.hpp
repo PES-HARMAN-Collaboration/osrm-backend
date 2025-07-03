@@ -5,6 +5,7 @@
 #include "engine/datafacade.hpp"
 #include "engine/map_matching/sub_matching.hpp"
 #include "engine/search_engine_data.hpp"
+#include "engine/yaw_rate.hpp"
 
 #include <vector>
 
@@ -25,6 +26,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                             const std::vector<util::Coordinate> &trace_coordinates,
                             const std::vector<unsigned> &trace_timestamps,
                             const std::vector<std::optional<double>> &trace_gps_precision,
+                            const std::vector<std::optional<engine::YawRate>> &yaw_rate,
                             const bool allow_splitting);
 
 } // namespace osrm::engine::routing_algorithms

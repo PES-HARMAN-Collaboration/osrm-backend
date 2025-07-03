@@ -29,6 +29,8 @@ SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #define ENGINE_API_MATCH_PARAMETERS_HPP
 
 #include "engine/api/route_parameters.hpp"
+#include "engine/yaw_rate.hpp"
+#include <optional>
 
 #include <vector>
 
@@ -59,7 +61,7 @@ struct MatchParameters : public RouteParameters
                           RouteParameters::GeometriesType::Polyline,
                           RouteParameters::OverviewType::Simplified,
                           {}),
-          gaps(GapsType::Split), tidy(false)
+          gaps(GapsType::Split), tidy(false), yaw_rate({})
     {
     }
 
@@ -78,15 +80,17 @@ struct MatchParameters : public RouteParameters
                     bool tidy_,
                     const std::vector<std::size_t> &waypoints_,
                     Args &&...args_)
-        : RouteParameters{std::forward<Args>(args_)..., waypoints_}, timestamps{std::move(
-                                                                         timestamps_)},
-          gaps(gaps_), tidy(tidy_)
+        : RouteParameters{std::forward<Args>(args_)..., waypoints_},
+          timestamps{std::move(timestamps_)}, gaps(gaps_), tidy(tidy_)
     {
     }
 
     std::vector<unsigned> timestamps;
     GapsType gaps;
     bool tidy;
+        // Optional yaw-rate (degrees per second) per waypoint
+    std::vector<std::optional<YawRate>> yaw_rate;
+
 
     bool IsValid() const
     {

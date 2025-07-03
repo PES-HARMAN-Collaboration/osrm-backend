@@ -227,6 +227,7 @@ Status MatchPlugin::HandleRequest(const RoutingAlgorithmsInterface &algorithms,
                                tidied.parameters.coordinates,
                                tidied.parameters.timestamps,
                                tidied.parameters.radiuses,
+                               tidied.parameters.yaw_rate,
                                parameters.gaps == api::MatchParameters::GapsType::Split);
 
     if (sub_matchings.size() == 0)

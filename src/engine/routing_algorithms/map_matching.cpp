@@ -8,7 +8,7 @@
 
 #include "util/coordinate_calculation.hpp"
 #include "util/for_each_pair.hpp"
-
+#include "engine/yaw_rate.hpp"
 #include <algorithm>
 #include <cstddef>
 #include <deque>
@@ -70,6 +70,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                             const std::vector<util::Coordinate> &trace_coordinates,
                             const std::vector<unsigned> &trace_timestamps,
                             const std::vector<std::optional<double>> &trace_gps_precision,
+                            const std::vector<std::optional<engine::YawRate>> &yaw_rate,
                             const bool allow_splitting)
 {
     map_matching::MatchingConfidence confidence;
@@ -251,7 +252,28 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                         continue;
                     }
 
-                    const double transition_pr = transition_log_probability(d_t);
+                    double transition_pr = transition_log_probability(d_t);
+
+                    // Inject yaw_rate penalty if available
+                    if (!trace_timestamps.empty() && t < trace_timestamps.size() &&
+                        t - 1 < trace_timestamps.size() && t - 1 < yaw_rate.size() &&
+                        yaw_rate[t - 1].has_value())
+                    {
+                        const auto &yaw = yaw_rate[t - 1].value();
+                        const double delta_time = trace_timestamps[t] - trace_timestamps[t - 1];
+                        const double expected_turn = yaw.value * delta_time;
+
+                        const double actual_turn =
+                            map_matching::ComputeTurnAngle(prev_unbroken_timestamps_list[s].phantom_node,
+                                                           current_timestamps_list[s_prime].phantom_node,
+                                                           facade);
+
+                        const double penalty =
+                            map_matching::ComputeTurnMismatchPenalty(expected_turn, actual_turn);
+
+                        transition_pr -= penalty / 10.0;  // scale factor can be tuned
+                    }
+
                     new_value += transition_pr;
 
                     if (new_value > current_viterbi[s_prime])
@@ -442,6 +464,7 @@ template SubMatchingList mapMatching(SearchEngineData<ch::Algorithm> &engine_wor
                                      const std::vector<util::Coordinate> &trace_coordinates,
                                      const std::vector<unsigned> &trace_timestamps,
                                      const std::vector<std::optional<double>> &trace_gps_precision,
+                                     const std::vector<std::optional<engine::YawRate>> &yaw_rate,
                                      const bool allow_splitting);
 
 // MLD
@@ -451,6 +474,7 @@ template SubMatchingList mapMatching(SearchEngineData<mld::Algorithm> &engine_wo
                                      const std::vector<util::Coordinate> &trace_coordinates,
                                      const std::vector<unsigned> &trace_timestamps,
                                      const std::vector<std::optional<double>> &trace_gps_precision,
+                                     const std::vector<std::optional<engine::YawRate>> &yaw_rate,
                                      const bool allow_splitting);
 
 } // namespace osrm::engine::routing_algorithms

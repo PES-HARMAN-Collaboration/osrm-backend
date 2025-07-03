@@ -6,6 +6,7 @@
 #include "server/api/table_parameter_grammar.hpp"
 #include "server/api/tile_parameter_grammar.hpp"
 #include "server/api/trip_parameter_grammar.hpp"
+#include <sstream>
 
 #include <type_traits>
 
@@ -107,3 +108,42 @@ std::optional<engine::api::TileParameters> parseParameters(std::string::iterator
 }
 
 } // namespace osrm::server::api
+std::vector<std::optional<osrm::engine::YawRate>> parseYawRateParameter(const std::string &value)
+{
+    std::vector<std::optional<osrm::engine::YawRate>> result;
+    std::stringstream ss(value);
+    std::string token;
+
+    while (std::getline(ss, token, ';'))
+    {
+        if (token.empty())
+        {
+            result.emplace_back(std::nullopt);
+            continue;
+        }
+
+        try
+        {
+            double yaw = std::stod(token);
+            osrm::engine::YawRate rate{yaw};
+            result.emplace_back(rate);
+        }
+        catch (...)
+        {
+            result.emplace_back(std::nullopt); // fallback for malformed input
+        }
+    }
+
+    return result;
+}
+std::vector<std::optional<osrm::engine::YawRate>> parseYawRateParameter(
+    const std::vector<std::string> &values)
+{
+    std::vector<std::optional<osrm::engine::YawRate>> result;
+    for (const auto &value : values)
+    {
+        auto parsed = parseYawRateParameter(value);
+        result.insert(result.end(), parsed.begin(), parsed.end());
+    }
+    return result;
+}

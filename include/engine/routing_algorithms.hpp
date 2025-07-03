@@ -41,6 +41,7 @@ class RoutingAlgorithmsInterface
                 const std::vector<util::Coordinate> &trace_coordinates,
                 const std::vector<unsigned> &trace_timestamps,
                 const std::vector<std::optional<double>> &trace_gps_precision,
+                const std::vector<std::optional<YawRate>> &yaw_rate,
                 const bool allow_splitting) const = 0;
 
     virtual std::vector<routing_algorithms::TurnData>
@@ -94,6 +95,7 @@ template <typename Algorithm> class RoutingAlgorithms final : public RoutingAlgo
                 const std::vector<util::Coordinate> &trace_coordinates,
                 const std::vector<unsigned> &trace_timestamps,
                 const std::vector<std::optional<double>> &trace_gps_precision,
+                const std::vector<std::optional<engine::YawRate>> &yaw_rate,
                 const bool allow_splitting) const final override;
 
     std::vector<routing_algorithms::TurnData>
@@ -179,6 +181,7 @@ inline routing_algorithms::SubMatchingList RoutingAlgorithms<Algorithm>::MapMatc
     const std::vector<util::Coordinate> &trace_coordinates,
     const std::vector<unsigned> &trace_timestamps,
     const std::vector<std::optional<double>> &trace_gps_precision,
+    const std::vector<std::optional<engine::YawRate>> &yaw_rate,
     const bool allow_splitting) const
 {
     return routing_algorithms::mapMatching(heaps,
@@ -187,6 +190,7 @@ inline routing_algorithms::SubMatchingList RoutingAlgorithms<Algorithm>::MapMatc
                                            trace_coordinates,
                                            trace_timestamps,
                                            trace_gps_precision,
+                                           yaw_rate,
                                            allow_splitting);
 }
 

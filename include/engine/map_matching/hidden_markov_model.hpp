@@ -2,6 +2,7 @@
 #define HIDDEN_MARKOV_MODEL
 
 #include "util/integer_range.hpp"
+#include "util/coordinate_calculation.hpp"
 
 #include <boost/assert.hpp>
 #include <numbers>
@@ -13,6 +14,30 @@
 
 namespace osrm::engine::map_matching
 {
+
+inline double
+ComputeTurnMismatchPenalty(double expected_angle, double actual_angle, double tolerance = 15.0)
+{
+    double delta = std::abs(expected_angle - actual_angle);
+    return (delta <= tolerance) ? 0.0 : delta; // you could use a smoother penalty if desired
+}
+
+template <typename Facade>
+inline double ComputeTurnAngle(const PhantomNode &from, const PhantomNode &to, const Facade &facade)
+{
+    const auto from_coord = facade.GetCoordinateOfNode(from.forward_segment_id.id);
+    const auto to_coord = facade.GetCoordinateOfNode(to.forward_segment_id.id);
+
+    double angle = util::coordinate_calculation::bearing(from_coord, to_coord);
+
+    // Normalize to [-180, 180]
+    if (angle > 180.0)
+        angle -= 360.0;
+    else if (angle < -180.0)
+        angle += 360.0;
+
+    return std::abs(angle);
+}
 
 static const double log_2_pi = std::log(2. * std::numbers::pi);
 static const double IMPOSSIBLE_LOG_PROB = -std::numeric_limits<double>::infinity();
