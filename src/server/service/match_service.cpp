@@ -5,6 +5,7 @@
 #include "engine/api/match_parameters.hpp"
 
 #include "util/json_container.hpp"
+#include <iostream>
 
 namespace osrm::server::service
 {
@@ -59,6 +60,11 @@ engine::Status MatchService::RunQuery(std::size_t prefix_length,
     }
 
     BOOST_ASSERT(parameters);
+    std::cerr << "coordinates: " << parameters->coordinates.size()
+              << ", timestamps: " << parameters->timestamps.size()
+              << ", yaw_rate: " << parameters->yaw_rate.size()
+              << ", steering_angle: " << parameters->steering_angle.size()
+              << std::endl;
     if (!parameters->IsValid())
     {
         json_result.values["code"] = "InvalidOptions";

@@ -41,7 +41,9 @@ class RoutingAlgorithmsInterface
                 const std::vector<util::Coordinate> &trace_coordinates,
                 const std::vector<unsigned> &trace_timestamps,
                 const std::vector<std::optional<double>> &trace_gps_precision,
-                const bool allow_splitting) const = 0;
+                const bool allow_splitting,
+                const std::vector<std::optional<YawRate>> &trace_yaw_rates = {},
+                const std::vector<std::optional<SteeringAngle>> &trace_steering_angles = {}) const = 0;
 
     virtual std::vector<routing_algorithms::TurnData>
     GetTileTurns(const std::vector<datafacade::BaseDataFacade::RTreeLeaf> &edges,
@@ -94,7 +96,9 @@ template <typename Algorithm> class RoutingAlgorithms final : public RoutingAlgo
                 const std::vector<util::Coordinate> &trace_coordinates,
                 const std::vector<unsigned> &trace_timestamps,
                 const std::vector<std::optional<double>> &trace_gps_precision,
-                const bool allow_splitting) const final override;
+                const bool allow_splitting,
+                const std::vector<std::optional<YawRate>> &trace_yaw_rates,
+                const std::vector<std::optional<SteeringAngle>> &trace_steering_angles) const final override;
 
     std::vector<routing_algorithms::TurnData>
     GetTileTurns(const std::vector<datafacade::BaseDataFacade::RTreeLeaf> &edges,
@@ -179,7 +183,9 @@ inline routing_algorithms::SubMatchingList RoutingAlgorithms<Algorithm>::MapMatc
     const std::vector<util::Coordinate> &trace_coordinates,
     const std::vector<unsigned> &trace_timestamps,
     const std::vector<std::optional<double>> &trace_gps_precision,
-    const bool allow_splitting) const
+    const bool allow_splitting,
+    const std::vector<std::optional<YawRate>> &trace_yaw_rates,
+    const std::vector<std::optional<SteeringAngle>> &trace_steering_angles) const
 {
     return routing_algorithms::mapMatching(heaps,
                                            *facade,
@@ -187,7 +193,9 @@ inline routing_algorithms::SubMatchingList RoutingAlgorithms<Algorithm>::MapMatc
                                            trace_coordinates,
                                            trace_timestamps,
                                            trace_gps_precision,
-                                           allow_splitting);
+                                           allow_splitting,
+                                           trace_yaw_rates,
+                                           trace_steering_angles);
 }
 
 template <typename Algorithm>

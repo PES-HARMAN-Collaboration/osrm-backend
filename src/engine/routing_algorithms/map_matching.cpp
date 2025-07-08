@@ -5,6 +5,7 @@
 #include "engine/map_matching/hidden_markov_model.hpp"
 #include "engine/map_matching/matching_confidence.hpp"
 #include "engine/map_matching/sub_matching.hpp"
+#include "engine/map_matching/vehicle_dynamics_transition.hpp"
 
 #include "util/coordinate_calculation.hpp"
 #include "util/for_each_pair.hpp"
@@ -70,11 +71,15 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                             const std::vector<util::Coordinate> &trace_coordinates,
                             const std::vector<unsigned> &trace_timestamps,
                             const std::vector<std::optional<double>> &trace_gps_precision,
-                            const bool allow_splitting)
+                            const bool allow_splitting,
+                            const std::vector<std::optional<YawRate>> &trace_yaw_rates,
+                            const std::vector<std::optional<SteeringAngle>> &trace_steering_angles)
 {
     map_matching::MatchingConfidence confidence;
     map_matching::EmissionLogProbability default_emission_log_probability(DEFAULT_GPS_PRECISION);
-    map_matching::TransitionLogProbability transition_log_probability(MATCHING_BETA);
+    
+    // Use enhanced transition probability calculator with vehicle dynamics
+    map_matching::VehicleDynamicsTransitionProbability transition_log_probability(MATCHING_BETA);
 
     SubMatchingList sub_matchings;
 
@@ -82,6 +87,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
     BOOST_ASSERT(candidates_list.size() > 1);
 
     const bool use_timestamps = trace_timestamps.size() > 1;
+    const bool use_vehicle_dynamics = !trace_yaw_rates.empty() || !trace_steering_angles.empty();
 
     const auto median_sample_time = [&]
     {
@@ -216,6 +222,22 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
             const EdgeWeight weight_upper_bound = to_alias<EdgeWeight>(
                 ((haversine_distance + max_distance_delta) / 4.) * facade.GetWeightMultiplier());
 
+            // Get vehicle dynamics data for this transition
+            std::optional<YawRate> prev_yaw_rate, curr_yaw_rate;
+            std::optional<SteeringAngle> prev_steering_angle, curr_steering_angle;
+            
+            if (use_vehicle_dynamics)
+            {
+                if (prev_unbroken_timestamp < trace_yaw_rates.size())
+                    prev_yaw_rate = trace_yaw_rates[prev_unbroken_timestamp];
+                if (t < trace_yaw_rates.size())
+                    curr_yaw_rate = trace_yaw_rates[t];
+                if (prev_unbroken_timestamp < trace_steering_angles.size())
+                    prev_steering_angle = trace_steering_angles[prev_unbroken_timestamp];
+                if (t < trace_steering_angles.size())
+                    curr_steering_angle = trace_steering_angles[t];
+            }
+
             // compute d_t for this timestamp and the next one
             for (const auto s : util::irange<std::size_t>(0UL, prev_viterbi.size()))
             {
@@ -251,7 +273,21 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                         continue;
                     }
 
-                    const double transition_pr = transition_log_probability(d_t);
+                    // Calculate transition probability with vehicle dynamics if available
+                    double transition_pr;
+                    if (use_vehicle_dynamics)
+                    {
+                        const double time_interval = static_cast<double>(step_time);
+                        transition_pr = transition_log_probability(d_t, prev_coordinate, current_coordinate,
+                                                                  prev_yaw_rate, curr_yaw_rate,
+                                                                  prev_steering_angle, curr_steering_angle,
+                                                                  time_interval);
+                    }
+                    else
+                    {
+                        transition_pr = transition_log_probability(d_t);
+                    }
+
                     new_value += transition_pr;
 
                     if (new_value > current_viterbi[s_prime])
@@ -398,9 +434,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
 
         auto matching_distance = 0.0;
         auto trace_distance = 0.0;
-        matching.nodes.reserve(reconstructed_indices.size());
-        matching.indices.reserve(reconstructed_indices.size());
-        matching.alternatives_count.reserve(reconstructed_indices.size());
+
         for (const auto &idx : reconstructed_indices)
         {
             const auto timestamp_index = idx.first;
@@ -442,7 +476,9 @@ template SubMatchingList mapMatching(SearchEngineData<ch::Algorithm> &engine_wor
                                      const std::vector<util::Coordinate> &trace_coordinates,
                                      const std::vector<unsigned> &trace_timestamps,
                                      const std::vector<std::optional<double>> &trace_gps_precision,
-                                     const bool allow_splitting);
+                                     const bool allow_splitting,
+                                     const std::vector<std::optional<YawRate>> &trace_yaw_rates,
+                                     const std::vector<std::optional<SteeringAngle>> &trace_steering_angles);
 
 // MLD
 template SubMatchingList mapMatching(SearchEngineData<mld::Algorithm> &engine_working_data,
@@ -451,7 +487,9 @@ template SubMatchingList mapMatching(SearchEngineData<mld::Algorithm> &engine_wo
                                      const std::vector<util::Coordinate> &trace_coordinates,
                                      const std::vector<unsigned> &trace_timestamps,
                                      const std::vector<std::optional<double>> &trace_gps_precision,
-                                     const bool allow_splitting);
+                                     const bool allow_splitting,
+                                     const std::vector<std::optional<YawRate>> &trace_yaw_rates,
+                                     const std::vector<std::optional<SteeringAngle>> &trace_steering_angles);
 
 } // namespace osrm::engine::routing_algorithms
 
