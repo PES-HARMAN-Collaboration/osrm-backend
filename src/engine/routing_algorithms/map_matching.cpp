@@ -279,9 +279,7 @@ SubMatchingList mapMatching(SearchEngineData<Algorithm> &engine_working_data,
                     {
                         const double time_interval = static_cast<double>(step_time);
                         transition_pr = transition_log_probability(d_t, prev_coordinate, current_coordinate,
-                                                                  prev_yaw_rate, curr_yaw_rate,
-                                                                  prev_steering_angle, curr_steering_angle,
-                                                                  time_interval);
+                                                                  curr_yaw_rate, time_interval);
                     }
                     else
                     {

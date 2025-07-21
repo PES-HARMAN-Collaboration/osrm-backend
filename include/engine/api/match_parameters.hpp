@@ -118,6 +118,9 @@ struct MatchParameters : public RouteParameters
     GapsType gaps;
     bool tidy;
 
+    // Optional: velocity (m/s) for each trace point, same length as trace_coordinates if provided
+    std::vector<std::optional<double>> trace_velocities;
+
     bool IsValid() const
     {
         // Validate base route parameters first
